@@ -1,0 +1,16 @@
+application: appscale-certify
+version: 1
+runtime: python27
+api_version: 1
+threadsafe: true
+
+handlers:
+- url: /static
+  static_dir: static
+
+- url: /
+  script: certify.app
+
+libraries:
+- name: jinja2
+  version: 2.6
