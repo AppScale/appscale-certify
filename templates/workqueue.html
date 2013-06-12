@@ -1,0 +1,18 @@
+{% extends "templates/base.html" %}
+{% block body %}
+<div class="span9">
+  <div class="hero-unit">
+    <h1>Apps Needing Certification</h1>
+  </div>
+  <div class="row-fluid">
+    {% if apps_waiting %}
+      <li>The following apps are awaiting certification:</li>
+      {% for app in apps_waiting %}
+        <a class="btn btn-primary btn-large" href="/view/{{ app.key.id() }}">{{ app.name }}</a>     
+      {% endfor %}
+    {% else %}
+      No apps currently awaiting certification.
+    {% endif %}
+  </div>
+</div><!--/span-->
+{% endblock %}
