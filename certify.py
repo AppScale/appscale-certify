@@ -138,6 +138,7 @@ class ViewAppCertification(webapp2.RequestHandler):
     if self.request.get('certification_info'):
       app.certification_info = self.request.get('certification_info')
     app.put()
+    self.redirect('/view/' + appid)
 
 
 class WorkQueue(webapp2.RequestHandler):
