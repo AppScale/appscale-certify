@@ -125,6 +125,17 @@ class ViewAppCertification(webapp2.RequestHandler):
     app.put()
 
 
+class WorkQueue(webapp2.RequestHandler):
+
+
+  def get(self):
+    template_values = get_common_template_params()
+    template_values['apps_waiting'] = CertifiedApp.query(
+      CertifiedApp.is_examined == False).fetch()
+    template = jinja_environment.get_template('templates/workqueue.html')
+    self.response.out.write(template.render(template_values))
+
+
 class StatsPage(webapp2.RequestHandler):
 
 
@@ -173,5 +184,6 @@ app = webapp2.WSGIApplication([
   ('/download', DownloadApps),
   ('/view/all', ViewApps),
   ('/view/(.+)', ViewAppCertification),
+  ('/workqueue', WorkQueue),
   ('/stats', StatsPage),
 ], debug=True)

@@ -31,6 +31,10 @@ handlers:
   login: required
 
 # Admin-only routes
+- url: /workqueue
+  script: certify.app
+  login: admin
+
 - url: /stats
   script: certify.app
   login: admin
