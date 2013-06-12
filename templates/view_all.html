@@ -1,0 +1,18 @@
+{% extends "templates/base.html" %}
+{% block body %}
+<div class="span9">
+  <div class="hero-unit">
+    <h1>My Certified Apps</h1>
+  </div>
+  <div class="row-fluid">
+    {% if all_my_apps %}
+      {% for app in all_my_apps %}
+        <a class="btn btn-primary btn-large" href="/view/{{ app.key.id() }}">{{ app.name }}</a>
+      {% endfor %}
+    {% else %}
+      No apps have been uploaded yet for certification. Would you like to <a href='/certify'>upload an app?</a>
+    {% endif %}
+  </div>
+  <br />
+</div><!--/span-->
+{% endblock %}

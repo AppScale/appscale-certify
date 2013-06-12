@@ -1,0 +1,14 @@
+{% extends "templates/base.html" %}
+{% block body %}
+<div class="span9">
+  <div class="hero-unit">
+    <h1>Certification Stats</h1>
+  </div>
+  <div class="row-fluid">
+    <br />{{ apps_uploaded }} applications have been uploaded for certification.
+    <br />{{ apps_passed }} applications have passed certification. Yay!
+    <br />{{ apps_failed }} applications have failed certification. Boo!
+    <br />{{ apps_waiting }} applications are awaiting certification.
+  </div>
+</div><!--/span-->
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "templates/base.html" %}
+{% block body %}
+<div class="span9">
+  <div class="hero-unit">
+    <h1>Certification for {{ app.name }}</h1>
+  </div>
+  <div class="row-fluid">
+    {% if app.is_examined %}
+      {% if app.passed_certification %}
+        Congratulations! Your application is AppScale certified!
+      {% else %}
+        Unfortunately, your application did not pass AppScale certification.
+
+        {% if app.certification_info %}
+          {{ app.certification_info }}
+        {% else %}
+          No information is available at this time as to why your application
+          did not pass certification.
+        {% endif %}
+
+      {% endif %}
+    {% else %}
+      Your application is currently being certified. Please check back later!
+    {% endif %}
+  </div>
+  <br />
+  {% if is_admin %}
+  <div class="row-fluid">
+    <form action="/view/{{ app.key.id() }}" method="POST" enctype="multipart/form-data">
+      <input name="approve" value="true" type="radio"> Approve This App</input>
+      <br />
+      <br />
+      <input name="approve" value="false" type="radio"> Reject This App</input>
+      <br />
+      <br />
+      <label>Approval / Rejection Information:</label>
+      <textarea rows="3" name="certification_info"></textarea>
+      <br />
+      <br />
+      <button type="submit" class="btn btn-primary btn-large">
+        Submit &raquo;
+      </button>
+  </div>
+  {% endif %}
+</div><!--/span-->
+{% endblock %}
