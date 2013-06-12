@@ -11,6 +11,7 @@ import webapp2
 
 
 # Google App Engine API imports
+from google.appengine.api import mail
 from google.appengine.api import users
 
 
@@ -64,18 +65,32 @@ class UploadApps(blobstore_handlers.BlobstoreUploadHandler):
   def post(self):
     try:
       upload_files = self.get_uploads('file')
-      if len(upload_files) > 0:
-        blob_info = upload_files[0]
-        appid = str(uuid.uuid4())
-        app = CertifiedApp(id = appid)
-        app.name = blob_info.filename
-        app.size = blob_info.size
-        app.owned_by = users.get_current_user()
-        app.blob = blob_info.key()
-        app.is_examined = False
-        app.passed_certification = False
-        app.certification_info = ""
-        app.put()
+      if len(upload_files) < 1:
+        self.redirect('/')
+        return
+
+      blob_info = upload_files[0]
+      appid = str(uuid.uuid4())
+      app = CertifiedApp(id = appid)
+      app.name = blob_info.filename
+      app.size = blob_info.size
+      app.owned_by = users.get_current_user()
+      app.blob = blob_info.key()
+      app.is_examined = False
+      app.passed_certification = False
+      app.certification_info = ""
+      app.put()
+
+      sender_address = "Certification App <chris@appscale.com>"
+      subject = "New App Awaiting Certification!"
+      body = """
+{0} uploaded a new application, {1}, for certification. Check it out at:
+
+http://certify.appscale.com/view/{2}
+""".format(users.get_current_user().nickname(), app.name, appid)
+
+      mail.send_mail(sender_address, "chris@appscale.com", subject, body)
+
       self.redirect('/view/' + appid)
     except CapabilityDisabledError:
       self.response.out.write('Uploading disabled')
