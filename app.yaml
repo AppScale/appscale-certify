@@ -5,11 +5,35 @@ api_version: 1
 threadsafe: true
 
 handlers:
+# Routes not requiring login
 - url: /static
   static_dir: static
 
 - url: /
   script: certify.app
+
+# Routes requiring login
+
+- url: /certify
+  script: certify.app
+  login: required
+
+- url: /upload
+  script: certify.app
+  login: required
+
+- url: /download
+  script: certify.app
+  login: required
+
+- url: /view/(.+)
+  script: certify.app
+  login: required
+
+# Admin-only routes
+- url: /stats
+  script: certify.app
+  login: admin
 
 libraries:
 - name: jinja2
