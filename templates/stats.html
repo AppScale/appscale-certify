@@ -8,9 +8,21 @@
     <script>
     $(document).ready(function() {
       var all_stats = [
-        { label: 'passed certification', data: [[1, {{ apps_passed }} ]]},
-        { label: 'failed certification', data: [[1, {{ apps_failed }} ]]},
-        { label: 'awaiting certification', data: [[1, {{ apps_waiting }} ]]}
+        {
+          label: {{ apps_passed }} + ' passed certification',
+          color: '#2980B9', // blue
+          data: [[1, {{ apps_passed }} ]]
+        },
+        {
+          label: {{ apps_failed }} + ' failed certification',
+          color: '#C0392B', // red
+          data: [[1, {{ apps_failed }} ]]
+        },
+        {
+          label: {{ apps_waiting }} + ' awaiting certification',
+          color: '#2C3E50', // dark blue
+          data: [[1, {{ apps_waiting }} ]]
+        }
       ];
 
       $.plot('#stats-flot', all_stats, {
