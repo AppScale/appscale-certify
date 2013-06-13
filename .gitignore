@@ -33,7 +33,6 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
-<<<<<<< HEAD
 
 # vim
 *.swp
