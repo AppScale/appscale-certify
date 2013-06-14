@@ -4,11 +4,39 @@
   <div class="hero-unit">
     <h1>Certification Stats</h1>
   </div>
-  <div class="row-fluid">
-    <br />{{ apps_uploaded }} applications have been uploaded for certification.
-    <br />{{ apps_passed }} applications have passed certification. Yay!
-    <br />{{ apps_failed }} applications have failed certification. Boo!
-    <br />{{ apps_waiting }} applications are awaiting certification.
+  <div id="stats-flot" class="flot-placeholder row-fluid" style="width: 550px; height: 550px">
+    <script>
+    $(document).ready(function() {
+      var all_stats = [
+        {
+          label: {{ apps_passed }} + ' passed certification',
+          color: '#2980B9', // blue
+          data: [[1, {{ apps_passed }} ]]
+        },
+        {
+          label: {{ apps_failed }} + ' failed certification',
+          color: '#C0392B', // red
+          data: [[1, {{ apps_failed }} ]]
+        },
+        {
+          label: {{ apps_waiting }} + ' awaiting certification',
+          color: '#2C3E50', // dark blue
+          data: [[1, {{ apps_waiting }} ]]
+        }
+      ];
+
+      $.plot('#stats-flot', all_stats, {
+        series: {
+          pie: {
+            show: true
+          }
+        },
+        legend: {
+          show: false
+        }
+      });
+    })
+    </script>
   </div>
 </div><!--/span-->
 {% endblock %}
