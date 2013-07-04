@@ -8,10 +8,12 @@ import sys
 import urllib
 import uuid
 import webapp2
+import zipfile
 
 
 # Google App Engine API imports
 from google.appengine.api import mail
+from google.appengine.api import taskqueue
 from google.appengine.api import users
 
 
@@ -38,6 +40,15 @@ class CertifiedApp(ndb.Model):
   is_examined = ndb.BooleanProperty()
   passed_certification = ndb.BooleanProperty()
   certification_info = ndb.TextProperty()
+  analysis_report = ndb.TextProperty()
+
+
+class BadLanguageException(Exception):
+  """ BadLanguageException represents a custom exception class that is thrown
+  when the AnalyzeApps class reads in zip files users upload that aren't
+  Python or Java App Engine apps.
+  """
+  pass
 
 
 class MainPage(webapp2.RequestHandler):
@@ -79,6 +90,7 @@ class UploadApps(blobstore_handlers.BlobstoreUploadHandler):
       app.is_examined = False
       app.passed_certification = False
       app.certification_info = ""
+      app.analysis_report = ""
       app.put()
 
       sender_address = "Certification App <chris@appscale.com>"
@@ -91,6 +103,7 @@ http://certify.appscale.com/view/{2}
 
       mail.send_mail(sender_address, "chris@appscale.com", subject, body)
 
+      taskqueue.add(url='/analyze/{0}'.format(appid))
       self.redirect('/view/' + appid)
     except CapabilityDisabledError:
       self.response.out.write('Uploading disabled')
@@ -170,6 +183,48 @@ class StatsPage(webapp2.RequestHandler):
     self.response.out.write(template.render(template_values))
 
 
+class AnalyzeApps(webapp2.RequestHandler):
+
+
+  NOT_A_ZIP_FILE_MESSAGE = """
+The file you uploaded was not a zip file. Please upload a zip file for
+certification and try again.
+"""
+
+  BAD_LANGUAGE_MESSAGE = """
+We could not determine if your application was a Python or Java Google App
+Engine application. If it is, please contact chris@appscale.com with the
+file you uploaded.
+"""
+
+
+  def post(self, appid):
+    # First, get the zip file from Blobstore.
+    app = CertifiedApp.get_by_id(appid)
+    blob_key = app.blob
+
+    # Next, make sure it's actually a valid zip file.
+    try:
+      app_zip_file = zipfile.ZipFile(blobstore.BlobReader(blob_key))
+    except zipfile.BadZipfile:
+      reject_app(app, self.NOT_A_ZIP_FILE_MESSAGE)
+      return
+
+    # Next, find out if it's a Python app or a Java app.
+    try:
+      language = get_language_from_zip(app_zip_file)
+    except BadLanguageException:
+      reject_app(app, self.BAD_LANGUAGE_MESSAGE)
+      return
+
+    if language == "python":
+      reject_app(app, "python not implemented yet")
+      return
+    else:
+      reject_app(app, "java not implemented yet")
+      return
+
+
 def get_common_template_params():
   """Returns a dict of params that are commonly used by our templates, including
   information about the currently logged in user. """
@@ -192,6 +247,44 @@ def get_common_template_params():
   }
 
 
+def reject_app(app, reason):
+  """ Marks the given app as not being AppScale compatible, for the reason
+  given by the caller.
+
+  Args:
+    app: The CertifiedApp model corresponding to the app to reject. Note that it
+      must have been previously retrieved from the Datastore.
+    reason: A str that indicates why this application is being rejected (e.g.,
+      it wasn't a zip file, it wasn't an App Engine app).
+  """
+  app.is_examined = True
+  app.passed_certification = False
+  app.certification_info = reason
+  app.put()
+
+
+def get_language_from_zip(app_zip_file):
+  """ Determines if the zip file given contains a Python or Java Google App
+  Engine application.
+
+  Args:
+    app_zip_file: A ZipFile object, representing the zipped up Google App
+      Engine application to examine.
+  Returns:
+    "python" if the app is a Python 2.5 or Python 2.7 Google App Engine app,
+       or "java" if the app is a Java App Engine app.
+  Raises:
+    BadLanguageException: If the app isn't a Python or Java App Engine app.
+  """
+  # TODO(cgb): Support Go and PHP App Engine apps.
+  for filename in app_zip_file.namelist():
+    if filename.endswith("app.yaml"):
+      return "python"
+    elif filename.endswith("appengine-web.xml"):
+      return "java"
+  raise BadLanguageException
+
+
 # Start up our app
 app = webapp2.WSGIApplication([
   ('/', MainPage),
@@ -202,4 +295,5 @@ app = webapp2.WSGIApplication([
   ('/view/(.+)', ViewAppCertification),
   ('/workqueue', WorkQueue),
   ('/stats', StatsPage),
+  ('/analyze/(.+)', AnalyzeApps),
 ], debug=True)
