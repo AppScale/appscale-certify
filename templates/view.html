@@ -26,6 +26,14 @@
   <br />
   {% if is_admin %}
   <div class="row-fluid">
+    {% if app.analysis_report %}
+      Analysis Report:
+      <ul>
+      {% for line in app.analysis_report.split("\n") %}
+        <li />{{ line }}
+      {% endfor %}
+      </ul>
+    {% endif %}
     <form action="/view/{{ app.key.id() }}" method="POST" enctype="multipart/form-data">
       <input name="approve" value="true" type="radio"> Approve This App</input>
       <br />

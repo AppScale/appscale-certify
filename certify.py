@@ -2,9 +2,9 @@
 
 
 # General purpose library imports
+import cStringIO
 import jinja2
 import os
-import sys
 import urllib
 import uuid
 import webapp2
@@ -218,7 +218,8 @@ file you uploaded.
       return
 
     if language == "python":
-      reject_app(app, "python not implemented yet")
+      report = generate_python_report(app_zip_file)
+      save_report(app, report)
       return
     else:
       reject_app(app, "java not implemented yet")
@@ -283,6 +284,48 @@ def get_language_from_zip(app_zip_file):
     elif filename.endswith("appengine-web.xml"):
       return "java"
   raise BadLanguageException
+
+
+def generate_python_report(app_zip_file):
+  """ Analyzes the ZipFile given to see what Google App Engine libraries this
+  Python application uses.
+
+  Args:
+    app_zip_file: A ZipFile corresponding to the zipped up Google App Engine
+      application to analyze.
+  Returns:
+    A str containing the App Engine imports this app uses, and the name of the
+    file containing each import.
+  """
+  report = cStringIO.StringIO()
+
+  for zipped_file in app_zip_file.infolist():
+    # Only process files ending with .py.
+    # TODO(cgb): Consider processing app.yaml as well.
+    if not zipped_file.filename.endswith(".py"):
+      continue
+
+    with app_zip_file.open(zipped_file) as file_handle:
+      for line in file_handle:
+        if "google.appengine" in line:
+          report.write("{0}: {1}".format(zipped_file.filename, line))
+
+  report_as_str = report.getvalue().rstrip()
+  report.close()
+  return report_as_str
+
+
+def save_report(app, report):
+  """ Stores the given report in the Datastore, for app administrators to
+  review at a later time.
+
+  Args:
+    app: The CertifiedApp model corresponding to the app to save a report for.
+      Note that it must have been previously retrieved from the Datastore.
+    report: A str that indicates what the analysis is for this application.
+  """
+  app.analysis_report = report
+  app.put()
 
 
 # Start up our app
