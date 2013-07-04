@@ -326,7 +326,7 @@ def send_report(app):
   Args:
     app: The CertifiedApp that we should e-mail information about.
   """
-  sender_address = "Certification App <chris@appscale.com>"
+  sender_address = "Certification App <no-reply@appscale-certify.appspotmail.com>"
   if app.is_examined:
     subject = "New App Automatically Certified!"
   else:
