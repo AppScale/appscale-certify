@@ -93,17 +93,7 @@ class UploadApps(blobstore_handlers.BlobstoreUploadHandler):
       app.analysis_report = ""
       app.put()
 
-      sender_address = "Certification App <chris@appscale.com>"
-      subject = "New App Awaiting Certification!"
-      body = """
-{0} uploaded a new application, {1}, for certification. Check it out at:
-
-http://certify.appscale.com/view/{2}
-""".format(users.get_current_user().nickname(), app.name, appid)
-
-      mail.send_mail(sender_address, "chris@appscale.com", subject, body)
-
-      taskqueue.add(url='/analyze/{0}'.format(appid))
+      taskqueue.add(url='/analyze/{0}'.format(appid), method='POST')
       self.redirect('/view/' + appid)
     except CapabilityDisabledError:
       self.response.out.write('Uploading disabled')
@@ -220,6 +210,7 @@ file you uploaded.
     if language == "python":
       report = generate_python_report(app_zip_file)
       save_report(app, report)
+      send_report(app)
       return
     else:
       reject_app(app, "java not implemented yet")
@@ -262,6 +253,7 @@ def reject_app(app, reason):
   app.passed_certification = False
   app.certification_info = reason
   app.put()
+  send_report(app)
 
 
 def get_language_from_zip(app_zip_file):
@@ -326,6 +318,34 @@ def save_report(app, report):
   """
   app.analysis_report = report
   app.put()
+
+
+def send_report(app):
+  """ E-mails the result of analyzing the uploaded application.
+
+  Args:
+    app: The CertifiedApp that we should e-mail information about.
+  """
+  sender_address = "Certification App <chris@appscale.com>"
+  if app.is_examined:
+    subject = "New App Automatically Certified!"
+  else:
+    subject = "New App Awaiting Certification!"
+
+  if app.analysis_report:
+    report = app.analysis_report
+  else:
+    report = "No information was gathered."
+
+  body = """
+{0} uploaded a new application, {1}, for certification. Check it out at:
+
+http://certify.appscale.com/view/{2}
+
+Analysis Report:
+{3}
+""".format(app.owned_by.nickname(), app.name, app.key.id(), report)
+  mail.send_mail(sender_address, "chris@appscale.com", subject, body)
 
 
 # Start up our app
