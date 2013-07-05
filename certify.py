@@ -213,7 +213,9 @@ file you uploaded.
       send_report(app)
       return
     else:
-      reject_app(app, "java not implemented yet")
+      report = generate_java_report(app_zip_file)
+      save_report(app, report)
+      send_report(app)
       return
 
 
@@ -279,12 +281,52 @@ def get_language_from_zip(app_zip_file):
 
 
 def generate_python_report(app_zip_file):
+  """ Generates a report that summarizes a static analysis of the given zip
+  file.
+
+  For the moment, we only analyze the Google App Engine libraries that the
+  given code imports, but in the future, we could also analyze the
+  app.yaml file or other configuration files (e.g., pull queues
+  in the queue.yaml file).
+
+  Args:
+    app_zip_file: A ZipFile correspond to the zipped up Python App Engine
+      app to create a report for.
+  Returns:
+    A str containing the report for this application.
+  """
+  return report_api_usage(app_zip_file, ".py", "google.appengine")
+
+
+def generate_java_report(app_zip_file):
+  """ Generates a report that summarizes a static analysis of the given zip
+  file.
+
+  For the moment, we only analyze the Google App Engine libraries that the
+  given code imports, but in the future, we could also analyze the
+  appengine-web.xml file or other configuration files (e.g., pull queues
+  in the queue.xml file).
+
+  Args:
+    app_zip_file: A ZipFile correspond to the zipped up Java App Engine
+      app to create a report for.
+  Returns:
+    A str containing the report for this application.
+  """
+  return report_api_usage(app_zip_file, ".java", "com.google.appengine")
+
+
+def report_api_usage(app_zip_file, file_extension, import_line):
   """ Analyzes the ZipFile given to see what Google App Engine libraries this
-  Python application uses.
+  application uses.
 
   Args:
     app_zip_file: A ZipFile corresponding to the zipped up Google App Engine
       application to analyze.
+    file_extension: A str that indicates which files we should be searching for
+      Google App Engine imports in.
+    import_line: A str that indicates what we should search for in the given
+      App Engine app.
   Returns:
     A str containing the App Engine imports this app uses, and the name of the
     file containing each import.
@@ -292,14 +334,13 @@ def generate_python_report(app_zip_file):
   report = cStringIO.StringIO()
 
   for zipped_file in app_zip_file.infolist():
-    # Only process files ending with .py.
-    # TODO(cgb): Consider processing app.yaml as well.
-    if not zipped_file.filename.endswith(".py"):
+    # TODO(cgb): Consider processing app.yaml and appengine-web.xml as well.
+    if not zipped_file.filename.endswith(file_extension):
       continue
 
     with app_zip_file.open(zipped_file) as file_handle:
       for line in file_handle:
-        if "google.appengine" in line:
+        if import_line in line:
           report.write("{0}: {1}".format(zipped_file.filename, line))
 
   report_as_str = report.getvalue().rstrip()
